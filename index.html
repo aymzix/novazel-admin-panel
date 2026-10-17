@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <title>Novazel — لوحة مراجعة المحتوى</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="config.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Novazel — لوحة الإدارة">
+      <span class="brand-mark" aria-hidden="true">N</span>
+      <span><strong>Novazel</strong><small>لوحة مراجعة المحتوى</small></span>
+    </a>
+    <div class="top-actions">
+      <span id="connection-state" class="connection-badge"><i></i> إعداد محلي غير موصول</span>
+      <span id="admin-identity" class="identity" hidden></span>
+      <button id="sign-out" class="button button-quiet" type="button" hidden>تسجيل الخروج</button>
+    </div>
+  </header>
+
+  <main id="top" class="page-shell">
+    <div class="intro-row">
+      <div>
+        <p class="eyebrow">مساحة المشرفين فقط</p>
+        <h1>إدارة الصور ومراجعتها</h1>
+        <p class="intro-copy">مسودة محلية غير منشورة. زر التجربة يعدّل بيانات اصطناعية في الذاكرة فقط؛ الرفع الحقيقي غير مفعّل. عند اعتماد التشغيل لاحقًا تبقى الصور خاصة حتى مراجعة metadata وجميع الوسوم.</p>
+      </div>
+      <div class="security-note"><span aria-hidden="true">◆</span><span><strong>لا يوجد تسجيل دخول للتطبيق.</strong><br>هذه واجهة إدارية مستقلة؛ صلاحية المشرف تُحسم على الخادم.</span></div>
+    </div>
+
+    <div id="global-message" class="message" role="status" aria-live="polite" hidden></div>
+
+    <section id="sign-in-panel" class="auth-card" aria-labelledby="sign-in-title">
+      <div class="auth-icon" aria-hidden="true">⌑</div>
+      <div class="auth-copy">
+        <h2 id="sign-in-title">دخول المشرف</h2>
+        <p>لا يتوفر إنشاء حساب من هذه اللوحة. يلزم حساب Auth سبق أن مُنح دور المشرف في الخادم.</p>
+      </div>
+      <form id="sign-in-form" class="auth-form">
+        <label class="field"><span>البريد الإلكتروني</span><input id="email" name="email" type="email" autocomplete="username" required placeholder="admin@example.com" dir="ltr"></label>
+        <label class="field"><span>كلمة المرور</span><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••••" dir="ltr"></label>
+        <button id="sign-in-button" class="button button-primary" type="submit" disabled>تسجيل الدخول</button>
+        <button id="demo-button" class="button button-quiet" type="button">استعراض تجريبي محلي</button>
+        <p id="config-hint" class="field-hint">يلزم إدخال إعدادات المشروع المعتمدة في config.js بعد المراجعة. لن تُرسل أي بيانات قبل ذلك.</p>
+      </form>
+      <p class="auth-foot">جلسة الواجهة تبقى في الذاكرة فقط؛ إعادة تحميل الصفحة تسجل الخروج.</p>
+    </section>
+
+    <section id="workspace" class="workspace" hidden>
+      <nav class="tabs" aria-label="أقسام لوحة المشرف">
+        <button class="tab active" type="button" data-view="review">مراجعة الصور <span id="pending-count" class="tab-count">—</span></button>
+        <button class="tab" type="button" data-view="discover">استكشاف / استيراد الملفات</button>
+        <button class="tab" type="button" data-view="audit">سجل التدقيق</button>
+      </nav>
+
+      <div id="review-view" class="view-grid">
+        <section class="panel catalog-panel" aria-labelledby="catalog-title">
+          <div class="panel-heading">
+            <div><h2 id="catalog-title">قائمة الكتالوج</h2><p>في وضع dummy تظهر metadata اصطناعية فقط، بلا صور. لن تُقرأ قاعدة فعلية إلا بتكوين معتمد وجلسة مشرف يتحقق منها الخادم.</p></div>
+            <span id="result-count" class="count-pill">—</span>
+          </div>
+          <div class="toolbar">
+            <label class="search-field"><span class="sr-only">البحث بالعربية أو الإنجليزية</span><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="بحث بالعربية أو الإنجليزية"></label>
+            <select id="status-filter" aria-label="تصفية حالة الصور">
+              <option value="pending">بانتظار المراجعة</option>
+              <option value="verified">معتمدة</option>
+              <option value="rejected">مرفوضة</option>
+              <option value="all">كل الحالات</option>
+            </select>
+            <button id="refresh" class="button button-quiet" type="button">تحديث</button>
+          </div>
+          <div id="asset-list" class="asset-list" aria-live="polite"></div>
+          <div class="pagination">
+            <span id="page-label">—</span>
+            <div><button id="previous-page" class="button button-quiet" type="button" disabled>السابق</button><button id="next-page" class="button button-quiet" type="button" disabled>التالي</button></div>
+          </div>
+        </section>
+
+        <section class="panel upload-panel" aria-labelledby="upload-title">
+          <div class="panel-heading"><div><h2 id="upload-title">اقتراح صورة</h2><p>الرفع ينشئ سجلًا بحالة pending؛ لا يعتمد الصورة تلقائيًا.</p></div><span class="count-pill">رفع خاص</span></div>
+          <form id="upload-form" class="upload-form">
+            <label class="upload-zone" for="image-file">
+              <input id="image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" required>
+              <span class="upload-symbol" aria-hidden="true">＋</span>
+              <strong id="file-label">اختر صورة من جهازك</strong>
+              <small>JPEG أو PNG أو WebP أو AVIF أو GIF · الحد 10 MiB</small>
+              <img id="local-preview" alt="معاينة محلية للصورة المختارة" hidden>
+            </label>
+            <div class="form-row">
+              <label class="field"><span>عنوان اختياري</span><input id="asset-title" type="text" maxlength="160" placeholder="عنوان وصفي"></label>
+              <label class="field"><span>ملاحظة اختيارية</span><input id="asset-description" type="text" maxlength="1000" placeholder="وصف قصير"></label>
+            </div>
+            <fieldset class="tag-fieldset">
+              <legend>وسوم عربية</legend>
+              <div class="tag-entry"><input id="tag-ar" type="text" maxlength="80" placeholder="أضف وسومًا مفصولة بفاصلة" dir="rtl"><button class="button button-quiet add-tag" data-input="tag-ar" type="button" aria-label="إضافة وسوم عربية">إضافة</button></div>
+              <div id="tags-ar" class="chips" aria-live="polite"></div>
+            </fieldset>
+            <fieldset class="tag-fieldset">
+              <legend>English tags</legend>
+              <div class="tag-entry"><input id="tag-en" type="text" maxlength="80" placeholder="Add tags separated by commas" dir="ltr"><button class="button button-quiet add-tag" data-input="tag-en" type="button">Add</button></div>
+              <div id="tags-en" class="chips" aria-live="polite"></div>
+            </fieldset>
+            <button id="upload-button" class="button button-primary" type="submit">إرسال للمراجعة</button>
+            <p class="form-foot">تُرفع الصورة عبر دالة إدارية محمية؛ لا يحتوي المتصفح على service_role. كل الوسوم المقترحة تبدأ pending.</p>
+          </form>
+        </section>
+      </div>
+
+      <section id="discover-view" class="panel discover-panel" hidden aria-labelledby="discover-title">
+        <div class="panel-heading"><div><h2 id="discover-title">استكشاف ملفات التخزين</h2><p>تصفح المسارات المسموح بها ثم استورد ملفًا واحدًا. الاستيراد لا يحذف أو ينقل أي كائن.</p></div><span id="discover-prefix" class="count-pill">/</span></div>
+        <div class="toolbar discover-toolbar"><button id="discover-up" class="button button-quiet" type="button" disabled>مجلد أعلى</button><button id="discover-refresh" class="button button-quiet" type="button">تحديث</button></div>
+        <div id="discover-list" class="discover-list" aria-live="polite"></div>
+        <div class="pagination"><span id="discover-page-label">—</span><div><button id="discover-prev" class="button button-quiet" type="button" disabled>السابق</button><button id="discover-next" class="button button-quiet" type="button" disabled>التالي</button></div></div>
+      </section>
+
+      <section id="audit-view" class="panel audit-panel" hidden aria-labelledby="audit-title">
+        <div class="panel-heading"><div><h2 id="audit-title">سجل التدقيق</h2><p>أحداث غير قابلة للتحرير من الواجهة: الفاعل، الفعل، الوقت، والتغييرات المسجلة.</p></div><button id="refresh-audit" class="button button-quiet" type="button">تحديث السجل</button></div>
+        <div id="audit-list" class="audit-list" aria-live="polite"></div>
+        <div class="pagination"><span id="audit-page-label">—</span><div><button id="audit-prev" class="button button-quiet" type="button" disabled>السابق</button><button id="audit-next" class="button button-quiet" type="button" disabled>التالي</button></div></div>
+      </section>
+    </section>
+
+    <div id="demo-banner" class="demo-banner" hidden>وضع dummy محلي: البيانات اصطناعية في الذاكرة فقط؛ لا اتصال ولا رفع ولا اعتماد حي ولا تغييرات Storage.</div>
+    <footer class="page-foot">واجهة static محلية للمراجعة فقط. لا تحتوي إعداد مشروع فعليًا ولا تتصل بخدمة حتى إدخال الإعدادات وتسجيل الدخول.</footer>
+  </main>
+  <template id="empty-template"><div class="empty-state"><span aria-hidden="true">▧</span><strong></strong><p></p></div></template>
+</body>
+</html>
